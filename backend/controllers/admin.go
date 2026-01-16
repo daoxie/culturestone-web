@@ -3,10 +3,10 @@ package controllers
 import (
 	"culturstone/config"
 	"culturstone/models"
-	"culturstone/utils" // Pastikan import ini ada untuk akses ke GenerateToken
-	"fmt"
+	"culturstone/services" // Import the new services package
+	"culturstone/utils"
+	"log"       // Import log package
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -162,16 +162,29 @@ func SaveProduct(c *gin.Context) {
 	p.Size = c.PostForm("size")
 	p.Finishing = c.PostForm("finishing")
 
-	file, _ := c.FormFile("image")
-	if file != nil {
-		filename := fmt.Sprintf("prod_%d_%s", time.Now().Unix(), filepath.Base(file.Filename))
-		c.SaveUploadedFile(file, "./uploads/"+filename)
-		p.ImageURL = "http://localhost:8080/uploads/" + filename
+	file, err := c.FormFile("image")
+	if err == nil { // If a file was provided
+		// Upload file to Vercel Blob
+		imageURL, uploadErr := services.UploadFileToVercelBlob(file, "prod")
+		if uploadErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image to Blob: " + uploadErr.Error()})
+			return
+		}
+		p.ImageURL = imageURL
+	} else if err != http.ErrMissingFile {
+		// Handle other errors from c.FormFile besides just a missing file (which is fine if not updating image)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get image file: " + err.Error()})
+		return
 	}
+
+	// Log start of database operation
+	startDBOp := time.Now()
 	if id != "" {
 		config.DB.Save(&p)
+		log.Printf("Product ID %s updated in %v", id, time.Since(startDBOp))
 	} else {
 		config.DB.Create(&p)
+		log.Printf("New product created in %v", time.Since(startDBOp))
 	}
 	c.JSON(http.StatusOK, p)
 }
@@ -199,16 +212,29 @@ func SaveCategory(c *gin.Context) {
 	cat.Name = c.PostForm("name")
 	cat.Description = c.PostForm("description")
 
-	file, _ := c.FormFile("image")
-	if file != nil {
-		filename := fmt.Sprintf("cat_%d_%s", time.Now().Unix(), filepath.Base(file.Filename))
-		c.SaveUploadedFile(file, "./uploads/"+filename)
-		cat.ImageURL = "http://localhost:8080/uploads/" + filename
+	file, err := c.FormFile("image")
+	if err == nil { // If a file was provided
+		// Upload file to Vercel Blob
+		imageURL, uploadErr := services.UploadFileToVercelBlob(file, "cat")
+		if uploadErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image to Blob: " + uploadErr.Error()})
+			return
+		}
+		cat.ImageURL = imageURL
+	} else if err != http.ErrMissingFile {
+		// Handle other errors from c.FormFile besides just a missing file (which is fine if not updating image)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get image file: " + err.Error()})
+		return
 	}
+
+	// Log start of database operation
+	startDBOp := time.Now()
 	if id != "" {
 		config.DB.Save(&cat)
+		log.Printf("Category ID %s updated in %v", id, time.Since(startDBOp))
 	} else {
 		config.DB.Create(&cat)
+		log.Printf("New category created in %v", time.Since(startDBOp))
 	}
 	c.JSON(http.StatusOK, cat)
 }
@@ -236,16 +262,29 @@ func SavePortfolio(c *gin.Context) {
 	pf.Title = c.PostForm("title")
 	pf.Description = c.PostForm("description")
 
-	file, _ := c.FormFile("image")
-	if file != nil {
-		filename := fmt.Sprintf("port_%d_%s", time.Now().Unix(), filepath.Base(file.Filename))
-		c.SaveUploadedFile(file, "./uploads/"+filename)
-		pf.ImageURL = "http://localhost:8080/uploads/" + filename
+	file, err := c.FormFile("image")
+	if err == nil { // If a file was provided
+		// Upload file to Vercel Blob
+		imageURL, uploadErr := services.UploadFileToVercelBlob(file, "port")
+		if uploadErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image to Blob: " + uploadErr.Error()})
+			return
+		}
+		pf.ImageURL = imageURL
+	} else if err != http.ErrMissingFile {
+		// Handle other errors from c.FormFile besides just a missing file (which is fine if not updating image)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get image file: " + err.Error()})
+		return
 	}
+
+	// Log start of database operation
+	startDBOp := time.Now()
 	if id != "" {
 		config.DB.Save(&pf)
+		log.Printf("Portfolio ID %s updated in %v", id, time.Since(startDBOp))
 	} else {
 		config.DB.Create(&pf)
+		log.Printf("New portfolio created in %v", time.Since(startDBOp))
 	}
 	c.JSON(http.StatusOK, pf)
 }
@@ -299,37 +338,47 @@ func SaveTestimoni(c *gin.Context) {
 	}
 
 	file, err := c.FormFile("image")
-	if err == nil {
-		filename := fmt.Sprintf("testimoni_img_%d_%s", time.Now().Unix(), filepath.Base(file.Filename))
-		uploadPath := "./uploads/" + filename
-		if err := c.SaveUploadedFile(file, uploadPath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image: " + err.Error()})
+	if err == nil { // If a file was provided
+		// Upload image file to Vercel Blob
+		imageURL, uploadErr := services.UploadFileToVercelBlob(file, "testimoni_img")
+		if uploadErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image to Blob: " + uploadErr.Error()})
 			return
 		}
-		t.ImagePath = "http://localhost:8080/uploads/" + filename
+		t.ImagePath = imageURL
+	} else if err != http.ErrMissingFile {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get image file: " + err.Error()})
+		return
 	}
 
 	videoFile, err := c.FormFile("video")
-	if err == nil {
-		videoFilename := fmt.Sprintf("testimoni_video_%d_%s", time.Now().Unix(), filepath.Base(videoFile.Filename))
-		videoUploadPath := "./uploads/" + videoFilename
-		if err := c.SaveUploadedFile(videoFile, videoUploadPath); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save video: " + err.Error()})
+	if err == nil { // If a file was provided
+		// Upload video file to Vercel Blob
+		videoURL, uploadErr := services.UploadFileToVercelBlob(videoFile, "testimoni_video")
+		if uploadErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video to Blob: " + uploadErr.Error()})
 			return
 		}
-		t.VideoPath = "http://localhost:8080/uploads/" + videoFilename
+		t.VideoPath = videoURL
+	} else if err != http.ErrMissingFile {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get video file: " + err.Error()})
+		return
 	}
 
+	// Log start of database operation
+	startDBOp := time.Now()
 	if id != "" {
 		if err := config.DB.Save(&t).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update testimoni: " + err.Error()})
 			return
 		}
+		log.Printf("Testimoni ID %s updated in %v", id, time.Since(startDBOp))
 	} else {
 		if err := config.DB.Create(&t).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create testimoni: " + err.Error()})
 			return
 		}
+		log.Printf("New testimoni created in %v", time.Since(startDBOp))
 	}
 	c.JSON(http.StatusOK, t)
 }

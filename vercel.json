@@ -22,5 +22,13 @@
       "src": "/(.*)",
       "dest": "frontend/$1"
     }
-  ]
+  ],
+  "env": {
+    "POSTGRES_URL": "postgresql://neondb_owner:npg_FnMJCLO7il3b@ep-calm-fire-ahbt7y88-pooler.c-3.us-eas1.aws.neon.tech/neondb?sslmode=require"
+  },
+  "build": {
+    "env": {
+      "GO_BUILD_FLAGS": ""
+    }
+  }
 }

@@ -52,7 +52,7 @@ export default function CompanyProfilePage({ t }) {
                 </div>
                 <div className="order-1 md:order-2">
                     <img
-                        src="/public/cslogonw.png" 
+                        src="/cslogonw.png" 
                         alt="Who We Are"
                         className="w-full h-auto rounded-2xl shadow-lg transform -rotate-2 hover:rotate-0 transition-transform duration-300 ease-in-out"
                     />
