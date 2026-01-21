@@ -60,6 +60,6 @@ type Testimoni struct { // New struct for "Testimoni"
 	TestimonialText string    `gorm:"type:text;not null" json:"TestimonialText"`
 	ImagePath       string    `gorm:"default:''" json:"ImagePath"` // Path to the client's image/avatar
 	VideoPath       string    `gorm:"default:''" json:"VideoPath"` // Path to the client's video
-	PortfolioID     uint      `json:"PortfolioID"`                        // Foreign key to Portfolio
+	PortfolioID     *uint      `json:"PortfolioID"`                        // Foreign key to Portfolio
 	Portfolio       Portfolio `gorm:"foreignKey:PortfolioID" json:"Portfolio"` // Belongs to relationship
 }

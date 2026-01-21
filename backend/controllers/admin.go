@@ -308,79 +308,82 @@ func SavePortfolio(c *gin.Context) {
 // @Failure 500 {object} gin.H
 // @Router /admin/testimoni [post]
 // @Router /admin/testimoni/{id} [put]
+// SaveTestimoni godoc
 func SaveTestimoni(c *gin.Context) {
-	var t models.Testimoni
-	id := c.Param("id")
-	if id != "" {
-		if err := config.DB.First(&t, id).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Testimoni not found"})
-			return
-		}
-	}
+    var t models.Testimoni
+    id := c.Param("id")
 
-	t.ClientName = c.PostForm("client_name")
-	t.TestimonialText = c.PostForm("testimonial_text")
+    // 1. Cek Data Lama (Edit Mode)
+    if id != "" {
+        if err := config.DB.First(&t, id).Error; err != nil {
+            c.JSON(http.StatusNotFound, gin.H{"error": "Testimoni not found"})
+            return
+        }
+    }
 
-	portfolioIDStr := c.PostForm("portfolio_id")
-	if portfolioIDStr != "" {
-		portfolioID, err := strconv.ParseUint(portfolioIDStr, 10, 32)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid portfolio_id format"})
-			return
-		}
-		t.PortfolioID = uint(portfolioID)
-	} else {
-		// Opsional: set 0 atau biarkan value lama jika tidak diupdate, 
-		// tapi logika ini akan menset 0 jika string kosong dikirim.
-		if id == "" {
-			t.PortfolioID = 0
-		}
-	}
+    // 2. Ambil Input Text
+    t.ClientName = c.PostForm("client_name")
+    t.TestimonialText = c.PostForm("testimonial_text")
 
-	file, err := c.FormFile("image")
-	if err == nil { // If a file was provided
-		// Upload image file to Vercel Blob
-		imageURL, uploadErr := services.UploadFileToVercelBlob(file, "testimoni_img")
-		if uploadErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image to Blob: " + uploadErr.Error()})
-			return
-		}
-		t.ImagePath = imageURL
-	} else if err != http.ErrMissingFile {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get image file: " + err.Error()})
-		return
-	}
+    // 3. LOGIC BARU: Handle Portfolio ID agar bisa NULL
+    portfolioIDStr := c.PostForm("portfolio_id")
+    
+    if portfolioIDStr != "" && portfolioIDStr != "0" {
+        // Jika user memilih portfolio
+        pID, err := strconv.ParseUint(portfolioIDStr, 10, 32)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid portfolio_id format"})
+            return
+        }
+        // Ubah angka menjadi Pointer uint
+        uID := uint(pID)
+        t.PortfolioID = &uID 
+    } else {
+        // Jika kosong/tidak dipilih, set menjadi NULL (nil)
+        t.PortfolioID = nil
+    }
 
-	videoFile, err := c.FormFile("video")
-	if err == nil { // If a file was provided
-		// Upload video file to Vercel Blob
-		videoURL, uploadErr := services.UploadFileToVercelBlob(videoFile, "testimoni_video")
-		if uploadErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video to Blob: " + uploadErr.Error()})
-			return
-		}
-		t.VideoPath = videoURL
-	} else if err != http.ErrMissingFile {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get video file: " + err.Error()})
-		return
-	}
+    // 4. Upload Image (Tetap sama)
+    file, err := c.FormFile("image")
+    if err == nil { 
+        imageURL, uploadErr := services.UploadFileToVercelBlob(file, "testimoni_img")
+        if uploadErr != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image: " + uploadErr.Error()})
+            return
+        }
+        t.ImagePath = imageURL
+    }
 
-	// Log start of database operation
-	startDBOp := time.Now()
-	if id != "" {
-		if err := config.DB.Save(&t).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update testimoni: " + err.Error()})
-			return
-		}
-		log.Printf("Testimoni ID %s updated in %v", id, time.Since(startDBOp))
-	} else {
-		if err := config.DB.Create(&t).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create testimoni: " + err.Error()})
-			return
-		}
-		log.Printf("New testimoni created in %v", time.Since(startDBOp))
-	}
-	c.JSON(http.StatusOK, t)
+    // 5. Upload Video (Tetap sama)
+    videoFile, err := c.FormFile("video")
+    if err == nil { 
+        videoURL, uploadErr := services.UploadFileToVercelBlob(videoFile, "testimoni_video")
+        if uploadErr != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video: " + uploadErr.Error()})
+            return
+        }
+        t.VideoPath = videoURL
+    }
+
+    // 6. Simpan ke Database
+    startDBOp := time.Now()
+    var errSave error
+    
+    if id != "" {
+        // Update: Gunakan Select("*") agar field yang NULL ikut tersimpan
+        errSave = config.DB.Model(&t).Select("ClientName", "TestimonialText", "PortfolioID", "ImagePath", "VideoPath", "UpdatedAt").Updates(&t).Error
+    } else {
+        // Create Baru
+        errSave = config.DB.Create(&t).Error
+    }
+
+    if errSave != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error: " + errSave.Error()})
+        return
+    }
+
+    log.Printf("Testimoni saved successfully in %v", time.Since(startDBOp))
+    c.JSON(http.StatusOK, t)
 }
 
 
