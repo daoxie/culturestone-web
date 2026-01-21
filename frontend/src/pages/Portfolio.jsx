@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { Search } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Portfolio({ t, portfolios, language, setSelectedPortfolio }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,7 +14,7 @@ export default function Portfolio({ t, portfolios, language, setSelectedPortfoli
         <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
                 <span className="text-[#4EC5C1] font-bold tracking-widest uppercase text-sm">{t.portfolio.subtitle}</span>
-                <h2 className="font-serif text-4xl font-bold mt-2 text-stone-800">{t.portfolio.title}</h2>
+                <h2 className="font-serif text-4xl font-bold mt-2 text-stone-800">{t.portfolio.title || 'Portofolio'}</h2>
                 <div className="max-w-md mx-auto mt-6 relative">
                     <input type="text" placeholder="Cari proyek..." className="w-full pl-10 pr-4 py-3 rounded-full border border-stone-200 outline-none focus:ring-2 focus:ring-[#4EC5C1] text-stone-800" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}/>
                     <Search className="absolute left-3 top-3.5 text-stone-400" size={18}/>
