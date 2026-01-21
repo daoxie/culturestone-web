@@ -17,7 +17,8 @@ var apiSecret = []byte(getSecretKey())
 func getSecretKey() string {
 	secret := os.Getenv("API_SECRET")
 	if secret == "" {
-		return "RAHASIA_SUPER_AMAN_CULTURSTONE" // Ganti dengan string acak yang panjang
+		// Fallback ke default yang konsisten
+		secret = "RAHASIA_SUPER_AMAN_CULTURSTONE"
 	}
 	return secret
 }
@@ -37,7 +38,7 @@ func GenerateToken(user_id uint) (string, error) {
 func TokenValid(c *gin.Context) error {
 	tokenString := ExtractToken(c)
 	if tokenString == "" {
-		return fmt.Errorf("token not found")
+		return fmt.Errorf("no token provided in Authorization header")
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -49,7 +50,7 @@ func TokenValid(c *gin.Context) error {
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("token parsing error: %v", err)
 	}
 
 	if !token.Valid {
@@ -63,10 +64,11 @@ func TokenValid(c *gin.Context) error {
 // Format yang diharapkan: "Bearer <token>"
 func ExtractToken(c *gin.Context) string {
 	bearerToken := c.Request.Header.Get("Authorization")
-	
+
 	// Cek apakah formatnya "Bearer <token>"
 	if len(strings.Split(bearerToken, " ")) == 2 {
-		return strings.Split(bearerToken, " ")[1]
+		token := strings.Split(bearerToken, " ")[1]
+		return token
 	}
 	return ""
 }

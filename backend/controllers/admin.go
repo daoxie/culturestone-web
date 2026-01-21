@@ -377,10 +377,25 @@ func SaveTestimoni(c *gin.Context) {
 	var errSave error
 
 	if id != "" {
-		// Update: Gunakan Select("*") agar field yang NULL ikut tersimpan
-		errSave = config.DB.Model(&t).Select("ClientName", "TestimonialText", "PortfolioID", "ImagePath", "VideoPath", "UpdatedAt").Updates(&t).Error
+		// Update dengan Map agar NULL bisa tersimpan dengan benar
+		updateData := map[string]interface{}{
+			"client_name":      t.ClientName,
+			"testimonial_text": t.TestimonialText,
+			"image_path":       t.ImagePath,
+			"video_path":       t.VideoPath,
+		}
+		// Handle portfolio_id: jika nil, set ke NULL
+		if t.PortfolioID == nil {
+			updateData["portfolio_id"] = nil
+		} else {
+			updateData["portfolio_id"] = *t.PortfolioID
+		}
+		errSave = config.DB.Model(&t).Updates(updateData).Error
 	} else {
-		// Create Baru
+		// Create Baru - set portfolio_id ke NULL jika nil
+		if t.PortfolioID == nil {
+			t.PortfolioID = nil // Pastikan nil
+		}
 		errSave = config.DB.Create(&t).Error
 	}
 

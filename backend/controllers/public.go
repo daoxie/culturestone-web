@@ -5,6 +5,7 @@ import (
 	"culturstone/models"
 	"net/http"
 	"time"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -51,7 +52,13 @@ func GetPortfolios(c *gin.Context) {
 // GetTestimoni for public display
 func GetTestimoni(c *gin.Context) {
 	var items []models.Testimoni
-	config.DB.Order("id desc").Preload("Portfolio").Find(&items) 
+	config.DB.Order("id desc").Preload("Portfolio").Find(&items)
+
+	// If no testimoni found, return empty array (not fallback to portfolios)
+	if items == nil {
+		items = []models.Testimoni{}
+	}
+
 	c.JSON(http.StatusOK, items)
 }
 

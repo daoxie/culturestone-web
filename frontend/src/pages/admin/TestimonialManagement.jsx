@@ -1,8 +1,8 @@
-import { API_URL } from '../../config';
 import axios from 'axios';
+import { Edit, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useToast } from '../../components/UI/ToastNotification'; // Import useToast
-import { Edit, Trash2 } from 'lucide-react';
+import { API_URL } from '../../config';
 
 const TestimonialManagement = ({ editingItem, setEditingItem }) => {
     const [testimonials, setTestimonials] = useState([]);
@@ -43,7 +43,7 @@ const TestimonialManagement = ({ editingItem, setEditingItem }) => {
             const headers = { 'Authorization': `Bearer ${token}` };
 
             const [testimonialsRes, portfoliosRes] = await Promise.all([
-                axios.get(`${API_URL}/admin/testimoni`, { headers }),
+                axios.get(`${API_URL}/testimoni`, { headers }),
                 axios.get(`${API_URL}/portfolios`, { headers }) // Portfolios might be public, but for admin context, ensure auth.
             ]);
             setTestimonials(testimonialsRes.data);
@@ -82,21 +82,40 @@ const TestimonialManagement = ({ editingItem, setEditingItem }) => {
 
         try {
             const token = localStorage.getItem('token');
-            const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }; // axios handles multipart/form-data with FormData correctly
-
-            if (editingItem) {
-                await axios.put(`${API_URL}/admin/testimoni/${editingItem.ID}`, data, { headers });
-                showToast('Testimoni berhasil diperbarui!', 'success');
-            } else {
-                await axios.post(`${API_URL}/admin/testimoni`, data, { headers });
-                showToast('Testimoni berhasil ditambahkan!', 'success');
+            if (!token) {
+                showToast('Token tidak ditemukan. Silakan login kembali.', 'error');
+                return;
             }
-            setEditingItem(null); // Reset editing item in AdminPanel
-            setFormData({ client_name: '', testimonial_text: '', image: null, video: null, portfolio_id: '' }); // Reset form
-            fetchData(); // Refresh data
+
+            const url = editingItem 
+                ? `${API_URL}/testimoni/${editingItem.ID}`
+                : `${API_URL}/testimoni`;
+            
+            const method = editingItem ? 'PUT' : 'POST';
+
+            // Gunakan fetch API untuk FormData (lebih reliable)
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                    // Jangan set Content-Type, browser akan set otomatis dengan boundary
+                },
+                body: data
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: res.statusText }));
+                throw new Error(errorData.error || `HTTP ${res.status}`);
+            }
+
+            const result = await res.json();
+            showToast(editingItem ? 'Testimoni berhasil diperbarui!' : 'Testimoni berhasil ditambahkan!', 'success');
+            setEditingItem(null);
+            setFormData({ client_name: '', testimonial_text: '', image: null, video: null, portfolio_id: '' });
+            fetchData();
         } catch (err) {
-            showToast('Gagal menyimpan testimoni: ' + (err.response?.data?.error || err.message), 'error');
-            console.error('Error saving testimoni:', err.response?.data || err);
+            showToast('Gagal menyimpan testimoni: ' + err.message, 'error');
+            console.error('Error saving testimoni:', err);
         }
     };
 
@@ -104,7 +123,7 @@ const TestimonialManagement = ({ editingItem, setEditingItem }) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus testimoni ini?')) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`${API_URL}/admin/testimoni/${id}`, {
+                await axios.delete(`${API_URL}/testimoni/${id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 showToast('Testimoni berhasil dihapus!', 'success');

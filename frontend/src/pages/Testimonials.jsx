@@ -1,5 +1,4 @@
-import React from 'react';
-import { Star } from 'lucide-react'; 
+import { Star } from 'lucide-react';
 
 const TestimonialsPage = ({ testimonials, t }) => {
   return (
@@ -11,7 +10,7 @@ const TestimonialsPage = ({ testimonials, t }) => {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {testimonials && testimonials.length > 0 ? testimonials.map(item => (
+                {testimonials && Array.isArray(testimonials) && testimonials.length > 0 ? testimonials.map(item => (
                     <div key={item.ID} className="bg-white p-8 rounded-xl shadow-lg border border-stone-100 text-center transform hover:-translate-y-2 transition-transform duration-300">
                         {/* Display media (video or image) first */}
                         {item.VideoPath ? (

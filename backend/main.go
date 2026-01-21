@@ -3,7 +3,7 @@ package handler
 import (
 	"culturstone/config"
 	"culturstone/controllers"
-	_ "culturstone/docs" // Dokumentasi Swagger
+	_ "culturstone/docs"      // Dokumentasi Swagger
 	"culturstone/middlewares" // Import middleware autentikasi yang baru dibuat
 	"culturstone/models"
 	"net/http"
@@ -66,58 +66,55 @@ func Handler(w http.ResponseWriter, req *http.Request) {
 		api.GET("/categories", controllers.GetCategories)
 		api.GET("/product-categories", controllers.GetProductCategories)
 		api.POST("/contact", controllers.PostContact)
-		
+
+		// Testimoni CRUD (PUBLIC - tanpa auth middleware)
+		api.POST("/testimoni", controllers.SaveTestimoni)
+		api.PUT("/testimoni/:id", controllers.SaveTestimoni)
+		api.DELETE("/testimoni/:id", controllers.DeleteEntity(&models.Testimoni{}))
+
 		// Auth Routes (Login & Register tetap Public)
 		api.POST("/login", controllers.AdminLogin)
 		api.POST("/register", controllers.AdminRegister)
+	}
 
-		// --- ADMIN ROUTES (DILINDUNGI JWT) ---
-		admin := api.Group("/admin")
-		
-		// Terapkan Middleware Autentikasi di sini
-		admin.Use(middlewares.JwtAuthMiddleware()) 
-		{
-			// Dashboard Stats
-			admin.GET("/stats", controllers.GetAdminStats)
-			
-			// Messages
-			admin.GET("/messages", controllers.GetMessages)
-			// @Summary Delete a contact message
-			// @Router /admin/messages/{id} [delete]
-			admin.DELETE("/messages/:id", controllers.DeleteEntity(&models.Message{}))
+	// --- ADMIN ROUTES (DILINDUNGI JWT) - Defined AFTER public routes ---
+	adminGroup := api.Group("/admin")
 
-			// Visitors
-			admin.GET("/visitors", controllers.GetVisitors)
+	// Terapkan Middleware Autentikasi di sini
+	adminGroup.Use(middlewares.JwtAuthMiddleware())
+	{
+		// Dashboard Stats
+		adminGroup.GET("/stats", controllers.GetAdminStats)
 
-			// CRUD Products
-			admin.POST("/products", controllers.SaveProduct)
-			admin.PUT("/products/:id", controllers.SaveProduct)
-			// @Summary Delete a product
-			// @Router /admin/products/{id} [delete]
-			admin.DELETE("/products/:id", controllers.DeleteEntity(&models.Product{}))
+		// Messages
+		adminGroup.GET("/messages", controllers.GetMessages)
+		// @Summary Delete a contact message
+		// @Router /admin/messages/{id} [delete]
+		adminGroup.DELETE("/messages/:id", controllers.DeleteEntity(&models.Message{}))
 
-			// CRUD Categories
-			admin.POST("/categories", controllers.SaveCategory)
-			admin.PUT("/categories/:id", controllers.SaveCategory)
-			// @Summary Delete a category
-			// @Router /admin/categories/{id} [delete]
-			admin.DELETE("/categories/:id", controllers.DeleteEntity(&models.Category{}))
+		// Visitors
+		adminGroup.GET("/visitors", controllers.GetVisitors)
 
-			// CRUD Portfolios
-			admin.POST("/portfolios", controllers.SavePortfolio)
-			admin.PUT("/portfolios/:id", controllers.SavePortfolio)
-			// @Summary Delete a portfolio item
-			// @Router /admin/portfolios/{id} [delete]
-			admin.DELETE("/portfolios/:id", controllers.DeleteEntity(&models.Portfolio{}))
+		// CRUD Products
+		adminGroup.POST("/products", controllers.SaveProduct)
+		adminGroup.PUT("/products/:id", controllers.SaveProduct)
+		// @Summary Delete a product
+		// @Router /admin/products/{id} [delete]
+		adminGroup.DELETE("/products/:id", controllers.DeleteEntity(&models.Product{}))
 
-			// CRUD Testimoni (Testimonials)
-			admin.GET("/testimoni", controllers.AdminGetTestimoni)
-			admin.POST("/testimoni", controllers.SaveTestimoni)
-			admin.PUT("/testimoni/:id", controllers.SaveTestimoni)
-			// @Summary Delete a testimonial
-			// @Router /admin/testimoni/{id} [delete]
-			admin.DELETE("/testimoni/:id", controllers.DeleteEntity(&models.Testimoni{}))
-		}
+		// CRUD Categories
+		adminGroup.POST("/categories", controllers.SaveCategory)
+		adminGroup.PUT("/categories/:id", controllers.SaveCategory)
+		// @Summary Delete a category
+		// @Router /admin/categories/{id} [delete]
+		adminGroup.DELETE("/categories/:id", controllers.DeleteEntity(&models.Category{}))
+
+		// CRUD Portfolios
+		adminGroup.POST("/portfolios", controllers.SavePortfolio)
+		adminGroup.PUT("/portfolios/:id", controllers.SavePortfolio)
+		// @Summary Delete a portfolio item
+		// @Router /admin/portfolios/{id} [delete]
+		adminGroup.DELETE("/portfolios/:id", controllers.DeleteEntity(&models.Portfolio{}))
 	}
 
 	r.ServeHTTP(w, req)

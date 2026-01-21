@@ -24,7 +24,8 @@
     }
   ],
   "env": {
-    "POSTGRES_URL": "postgresql://neondb_owner:npg_FnMJCLO7il3b@ep-calm-fire-ahbt7y88-pooler.c-3.us-eas1.aws.neon.tech/neondb?sslmode=require"
+    "POSTGRES_URL": "postgresql://neondb_owner:npg_FnMJCLO7il3b@ep-calm-fire-ahbt7y88-pooler.c-3.us-eas1.aws.neon.tech/neondb?sslmode=require",
+    "BLOB_READ_WRITE_TOKEN": "vercel_blob_rw_WWIYvfqXeKBn6T9P_DVeQdnfUbFLrwxBixR4fIUUrUkw0Kt"
   },
   "build": {
     "env": {

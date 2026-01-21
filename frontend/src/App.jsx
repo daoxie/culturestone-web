@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import Navbar from './components/layout/Navbar';
+import { useEffect, useState } from 'react';
 import Footer from './components/layout/Footer';
-import Home from './pages/Home';
-import ProductsPage from '/src/pages/Products';
-import PortfolioPage from '/src/pages/Portfolio';
-import TestimonialsPage from './pages/Testimonials';
-import ContactPage from '/src/pages/Contact';
-import CompanyProfilePage from './pages/CompanyProfilePage';
-import Login from '/src/pages/Login';
-import AdminPanel from './pages/admin/AdminPanel';
-import { ProductModal, CategoryModal, PortfolioModal } from './components/UI/Modals';
-import { translations } from './translations';
+import Navbar from './components/layout/Navbar';
+import { CategoryModal, PortfolioModal, ProductModal } from './components/UI/Modals';
 import { API_URL } from './config';
+import AdminPanel from './pages/admin/AdminPanel';
+import CompanyProfilePage from './pages/CompanyProfilePage';
+import Home from './pages/Home';
+import TestimonialsPage from './pages/Testimonials';
+import { translations } from './translations';
+import ContactPage from '/src/pages/Contact';
+import Login from '/src/pages/Login';
+import PortfolioPage from '/src/pages/Portfolio';
+import ProductsPage from '/src/pages/Products';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home'); 
@@ -78,7 +78,7 @@ export default function App() {
 
       setProducts(productsData);
       setPortfolios(portfolioData);
-      setTestimonials(testimonialsData);
+      setTestimonials(testimonialsData || []); // Ensure empty array if null
       setCategories(categoriesData);
 
     } catch (e) {
