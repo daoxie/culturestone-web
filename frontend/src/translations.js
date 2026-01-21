@@ -81,7 +81,7 @@ export const translations = {
         feature_2_desc: "Kualitas ekspor & impor."
     },
     category: { title: "Kategori Batu", subtitle: "Pilihan batu alam terbaik untuk kebutuhan arsitektur Anda." },
-    portfolio: { title: "Testimoni", subtitle: "Lihat Bagaimana Produk Kami Mengubah Tampilan Ruangan Anda Menjadi Lebih Keren Dan Berkelas." },
+    portfolio: { title: "Portofolio", subtitle: "Lihat Bagaimana Produk Kami Mengubah Tampilan Ruangan Anda Menjadi Lebih Keren Dan Berkelas." },
     products: { title: "Produk Unggulan", subtitle: "Pilihan Terbaik", btn_all: "Lihat Semua", search_ph: "Cari produk..." },
     testimonial: { title: "Testimoni Klien", subtitle: "Apa Kata Klien Kami" },
     contact: { title: "Hubungi Kami", form_name: "Nama Lengkap", form_phone: "No. WhatsApp", form_msg: "Pesan / Permintaan", btn_send: "Kirim Pesan" },
