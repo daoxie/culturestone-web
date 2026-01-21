@@ -53,13 +53,12 @@ type User struct {
 	Password string
 }
 
-
-type Testimoni struct { // New struct for "Testimoni"
+type Testimoni struct {
 	gorm.Model
-	ClientName      string    `gorm:"not null" json:"ClientName"`
-	TestimonialText string    `gorm:"type:text;not null" json:"TestimonialText"`
-	ImagePath       string    `gorm:"default:''" json:"ImagePath"` // Path to the client's image/avatar
-	VideoPath       string    `gorm:"default:''" json:"VideoPath"` // Path to the client's video
-	PortfolioID     *uint      `json:"PortfolioID"`                        // Foreign key to Portfolio
-	Portfolio       Portfolio `gorm:"foreignKey:PortfolioID" json:"Portfolio"` // Belongs to relationship
+	ClientName      string     `gorm:"not null" json:"ClientName"`
+	TestimonialText string     `gorm:"type:text;not null" json:"TestimonialText"`
+	ImagePath       string     `gorm:"default:''" json:"ImagePath"`
+	VideoPath       string     `gorm:"default:''" json:"VideoPath"`
+	PortfolioID     *uint      `gorm:"constraint:OnDelete:SET NULL;type:integer" json:"PortfolioID"`
+	Portfolio       *Portfolio `gorm:"foreignKey:PortfolioID" json:"Portfolio"`
 }

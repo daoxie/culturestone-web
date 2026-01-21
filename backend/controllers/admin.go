@@ -5,7 +5,7 @@ import (
 	"culturstone/models"
 	"culturstone/services" // Import the new services package
 	"culturstone/utils"
-	"log"       // Import log package
+	"log" // Import log package
 	"net/http"
 	"strconv"
 	"time"
@@ -118,6 +118,7 @@ func GetAdminStats(c *gin.Context) {
 		"visitors":           visitors,
 	})
 }
+
 // GetMessages godoc
 // @Summary Get all contact messages
 // @Description Retrieves a list of all messages submitted through the contact form.
@@ -289,7 +290,6 @@ func SavePortfolio(c *gin.Context) {
 	c.JSON(http.StatusOK, pf)
 }
 
-
 // SaveTestimoni godoc
 // @Summary Create or update a testimonial
 // @Description Creates a new testimonial or updates an existing one if an ID is provided.
@@ -310,82 +310,88 @@ func SavePortfolio(c *gin.Context) {
 // @Router /admin/testimoni/{id} [put]
 // SaveTestimoni godoc
 func SaveTestimoni(c *gin.Context) {
-    var t models.Testimoni
-    id := c.Param("id")
+	var t models.Testimoni
+	id := c.Param("id")
 
-    // 1. Cek Data Lama (Edit Mode)
-    if id != "" {
-        if err := config.DB.First(&t, id).Error; err != nil {
-            c.JSON(http.StatusNotFound, gin.H{"error": "Testimoni not found"})
-            return
-        }
-    }
+	// 1. Cek Data Lama (Edit Mode)
+	if id != "" {
+		if err := config.DB.First(&t, id).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Testimoni not found"})
+			return
+		}
+	}
 
-    // 2. Ambil Input Text
-    t.ClientName = c.PostForm("client_name")
-    t.TestimonialText = c.PostForm("testimonial_text")
+	// 2. Ambil Input Text
+	t.ClientName = c.PostForm("client_name")
+	t.TestimonialText = c.PostForm("testimonial_text")
 
-    // 3. LOGIC BARU: Handle Portfolio ID agar bisa NULL
-    portfolioIDStr := c.PostForm("portfolio_id")
-    
-    if portfolioIDStr != "" && portfolioIDStr != "0" {
-        // Jika user memilih portfolio
-        pID, err := strconv.ParseUint(portfolioIDStr, 10, 32)
-        if err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid portfolio_id format"})
-            return
-        }
-        // Ubah angka menjadi Pointer uint
-        uID := uint(pID)
-        t.PortfolioID = &uID 
-    } else {
-        // Jika kosong/tidak dipilih, set menjadi NULL (nil)
-        t.PortfolioID = nil
-    }
+	// 3. LOGIC BARU: Handle Portfolio ID agar bisa NULL
+	portfolioIDStr := c.PostForm("portfolio_id")
 
-    // 4. Upload Image (Tetap sama)
-    file, err := c.FormFile("image")
-    if err == nil { 
-        imageURL, uploadErr := services.UploadFileToVercelBlob(file, "testimoni_img")
-        if uploadErr != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image: " + uploadErr.Error()})
-            return
-        }
-        t.ImagePath = imageURL
-    }
+	// SELALU set PortfolioID ke nil terlebih dahulu
+	t.PortfolioID = nil
 
-    // 5. Upload Video (Tetap sama)
-    videoFile, err := c.FormFile("video")
-    if err == nil { 
-        videoURL, uploadErr := services.UploadFileToVercelBlob(videoFile, "testimoni_video")
-        if uploadErr != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video: " + uploadErr.Error()})
-            return
-        }
-        t.VideoPath = videoURL
-    }
+	if portfolioIDStr != "" && portfolioIDStr != "0" {
+		// Jika user memilih portfolio
+		pID, err := strconv.ParseUint(portfolioIDStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid portfolio_id format"})
+			return
+		}
 
-    // 6. Simpan ke Database
-    startDBOp := time.Now()
-    var errSave error
-    
-    if id != "" {
-        // Update: Gunakan Select("*") agar field yang NULL ikut tersimpan
-        errSave = config.DB.Model(&t).Select("ClientName", "TestimonialText", "PortfolioID", "ImagePath", "VideoPath", "UpdatedAt").Updates(&t).Error
-    } else {
-        // Create Baru
-        errSave = config.DB.Create(&t).Error
-    }
+		// Validasi portfolio ada di database
+		uID := uint(pID)
+		var portfolio models.Portfolio
+		if err := config.DB.First(&portfolio, uID).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Portfolio with ID " + portfolioIDStr + " not found"})
+			return
+		}
 
-    if errSave != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error: " + errSave.Error()})
-        return
-    }
+		t.PortfolioID = &uID
+	}
 
-    log.Printf("Testimoni saved successfully in %v", time.Since(startDBOp))
-    c.JSON(http.StatusOK, t)
+	// 4. Upload Image (Tetap sama)
+	file, err := c.FormFile("image")
+	if err == nil {
+		imageURL, uploadErr := services.UploadFileToVercelBlob(file, "testimoni_img")
+		if uploadErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image: " + uploadErr.Error()})
+			return
+		}
+		t.ImagePath = imageURL
+	}
+
+	// 5. Upload Video (Tetap sama)
+	videoFile, err := c.FormFile("video")
+	if err == nil {
+		videoURL, uploadErr := services.UploadFileToVercelBlob(videoFile, "testimoni_video")
+		if uploadErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video: " + uploadErr.Error()})
+			return
+		}
+		t.VideoPath = videoURL
+	}
+
+	// 6. Simpan ke Database
+	startDBOp := time.Now()
+	var errSave error
+
+	if id != "" {
+		// Update: Gunakan Select("*") agar field yang NULL ikut tersimpan
+		errSave = config.DB.Model(&t).Select("ClientName", "TestimonialText", "PortfolioID", "ImagePath", "VideoPath", "UpdatedAt").Updates(&t).Error
+	} else {
+		// Create Baru
+		errSave = config.DB.Create(&t).Error
+	}
+
+	if errSave != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create testimoni: " + errSave.Error()})
+		return
+	}
+
+	log.Printf("Testimoni saved successfully in %v", time.Since(startDBOp))
+	c.JSON(http.StatusOK, t)
 }
-
 
 // AdminGetTestimoni godoc
 // @Summary Get all testimonials for admin
